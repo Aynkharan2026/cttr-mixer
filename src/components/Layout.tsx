@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useStatus } from '../StatusContext';
 import { api } from '../api';
 import { clearToken } from '../api';
+import AudioPlayer from './AudioPlayer';
 
 const NAV = [
   { to: '/', label: 'தற்போது ஒலிபரப்பு', end: true },
@@ -167,6 +168,8 @@ export default function Layout() {
         <main className="flex-1 px-3 py-4 md:px-6 md:py-6 max-w-4xl w-full mx-auto md:mx-0">
           <Outlet />
         </main>
+
+        <AudioPlayer />
       </div>
     </div>
   );
