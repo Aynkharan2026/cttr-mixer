@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --bg-top: #2d1b4e;
+  --bg-mid: #1a0a2e;
+  --bg-bottom: #0d0518;
+  --gold: #d4af37;
+  --card-border: #3d2b5e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, var(--bg-top) 0%, var(--bg-mid) 45%, var(--bg-bottom) 100%);
+  background-attachment: fixed;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Mukta Malar', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+.tamil {
+  font-family: 'Noto Sans Tamil', 'Mukta Malar', -apple-system, sans-serif;
+}
+
+/* thin gold scrollbars, since this is a control panel that'll live in a browser tab all day */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.45);
+}
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+.eq-bar {
+  animation: eq-bounce 1s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+@keyframes pulse-ring {
+  0% { opacity: 0.5; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
