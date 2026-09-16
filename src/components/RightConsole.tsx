@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import ScheduleEditor from './ScheduleEditor';
 import QueuePanel from './QueuePanel';
 
@@ -68,20 +69,24 @@ export default function RightConsole() {
         <div className="text-[10px] text-white/35 mt-0.5">Console</div>
       </div>
 
-      <Section title="நேர அட்டவணை — Schedule Editor" defaultOpen>
+      <Link
+        to="/schedule"
+        className="tamil mx-4 mt-3 flex items-center justify-between rounded-xl border-2 px-3 py-2.5 text-xs font-semibold"
+        style={{ borderColor: 'var(--gold)', color: 'var(--gold)', background: 'rgba(212,175,55,0.08)' }}
+      >
+        🕐 மணி நேர கடிகாரம் &amp; காலண்டர்
+        <span aria-hidden>→</span>
+      </Link>
+
+      <Section title="பட்டியல் விரைவு திருத்தி — Playlist Quick-Editor" defaultOpen>
         <ScheduleEditor compact />
       </Section>
 
       <Section title="விரைவு செருகல் — Quick Insert">
-        <PlaceholderGrid
-          items={[
-            { label: 'ஜிங்கிள்', icon: '🎶' },
-            { label: 'நிலைய அடையாளம்', icon: '🆔' },
-            { label: 'நேர அறிவிப்பு', icon: '🕐' },
-          ]}
-        />
-        <div className="text-[10px] text-white/30 mt-2 leading-relaxed">
-          இணைக்கப்படவில்லை: இந்த ஒலிக் கோப்புகள் தரவுத்தளத்தில் இல்லை.
+        <div className="text-[10px] text-white/40 leading-relaxed tamil">
+          ஜிங்கிள் / நிலைய அடையாளம் / நேர அறிவிப்பு விதிகளை உருவாக்கி இயக்க, மேலே உள்ள
+          "மணி நேர கடிகாரம் &amp; காலண்டர்" பக்கத்தில் "தானியங்கி செருகல்கள் — Auto-Insert" பகுதியைப்
+          பயன்படுத்தவும் (இப்போது real: schedule_inserts + telnet cttr.push வழியே).
         </div>
       </Section>
 

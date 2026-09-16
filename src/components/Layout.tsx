@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import TopBar from './TopBar';
 import LeftPanel from './LeftPanel';
@@ -34,6 +34,13 @@ export default function Layout() {
   const sidebarW = sidebarCollapsed ? 64 : 224;
   const consoleW = 320;
 
+  // The hour-clock + calendar editor (/schedule) needs real width — a 60-minute
+  // timeline and a 7x24 calendar grid don't fit the 720px column every other
+  // page uses. Widen just that route rather than the whole shell.
+  const location = useLocation();
+  const isSchedulePage = location.pathname.startsWith('/schedule');
+  const contentMaxWidth = isSchedulePage ? 1400 : 720;
+
   return (
     <div className="min-h-screen" data-cttr-layout="three-panel-console-v1" style={{ paddingTop: TOP_H, paddingBottom: BOTTOM_H }}>
       <TopBar
@@ -47,8 +54,8 @@ export default function Layout() {
 
       {/* Center panel */}
       <main className="cttr-main min-h-[calc(100vh-112px)] px-3 py-4 md:px-6 md:py-6 transition-all duration-200">
-        <div className="mx-auto transition-all duration-200" style={{ maxWidth: 720 }}>
-          <NowPlayingCard />
+        <div className="mx-auto transition-all duration-200" style={{ maxWidth: contentMaxWidth }}>
+          {!isSchedulePage && <NowPlayingCard />}
           <Outlet />
         </div>
       </main>

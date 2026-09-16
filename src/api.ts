@@ -156,4 +156,115 @@ export const api = {
     request<{ ok: true; track_count: number }>(`/api/schedule/playlists/${id}/tracks/${trackId}`, {
       method: 'DELETE',
     }),
+
+  // Hour-clock + calendar scheduling engine.
+  clocks: () => request<{ results: import('./types').ScheduleClock[] }>('/api/schedule/clocks'),
+  clock: (id: number) => request<import('./types').ScheduleClockDetail>(`/api/schedule/clocks/${id}`),
+  createClock: (body: { name: string; name_tamil?: string; description?: string }) =>
+    request<{ ok: true; id: number }>('/api/schedule/clocks', { method: 'POST', body: JSON.stringify(body) }),
+  updateClock: (id: number, body: Partial<{ name: string; name_tamil: string; description: string }>) =>
+    request<{ ok: true }>(`/api/schedule/clocks/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteClock: (id: number) => request<{ ok: true }>(`/api/schedule/clocks/${id}`, { method: 'DELETE' }),
+  duplicateClock: (id: number, body: { name: string; name_tamil?: string }) =>
+    request<{ ok: true; id: number }>(`/api/schedule/clocks/${id}/duplicate`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  createSlot: (
+    clockId: number,
+    body: {
+      minute_offset: number;
+      duration_minutes: number;
+      slot_type: import('./types').ClockSlotType;
+      playlist_id?: number | null;
+      track_id?: string | null;
+      is_live?: boolean;
+      label?: string | null;
+      label_tamil?: string | null;
+    },
+  ) => request<{ ok: true; id: number }>(`/api/schedule/clocks/${clockId}/slots`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }),
+  updateSlot: (
+    clockId: number,
+    slotId: number,
+    body: Partial<{
+      minute_offset: number;
+      duration_minutes: number;
+      slot_type: import('./types').ClockSlotType;
+      playlist_id: number | null;
+      track_id: string | null;
+      clear_playlist: boolean;
+      clear_track: boolean;
+      is_live: boolean;
+      label: string | null;
+      label_tamil: string | null;
+    }>,
+  ) => request<{ ok: true }>(`/api/schedule/clocks/${clockId}/slots/${slotId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  }),
+  deleteSlot: (clockId: number, slotId: number) =>
+    request<{ ok: true }>(`/api/schedule/clocks/${clockId}/slots/${slotId}`, { method: 'DELETE' }),
+
+  calendar: (params: { start?: string; end?: string } = {}) =>
+    request<{ results: import('./types').CalendarEntry[] }>(`/api/schedule/calendar${qs(params)}`),
+  createCalendarEntry: (body: {
+    clock_id: number;
+    date?: string | null;
+    day_of_week?: number | null;
+    hour_start: number;
+    hour_end: number;
+    priority?: number;
+    enabled?: boolean;
+  }) => request<{ ok: true; id: number }>('/api/schedule/calendar', { method: 'POST', body: JSON.stringify(body) }),
+  updateCalendarEntry: (
+    id: number,
+    body: Partial<{
+      clock_id: number;
+      date: string | null;
+      day_of_week: number | null;
+      clear_date: boolean;
+      clear_day_of_week: boolean;
+      hour_start: number;
+      hour_end: number;
+      priority: number;
+      enabled: boolean;
+    }>,
+  ) => request<{ ok: true }>(`/api/schedule/calendar/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteCalendarEntry: (id: number) => request<{ ok: true }>(`/api/schedule/calendar/${id}`, { method: 'DELETE' }),
+  applyWeek: (body: { clock_id: number; hour_start: number; hour_end: number; priority?: number }) =>
+    request<{ ok: true; calendar_ids: number[] }>('/api/schedule/calendar/apply-week', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  scheduleStatus: () => request<import('./types').ScheduleStatus>('/api/schedule/status'),
+
+  inserts: () => request<{ results: import('./types').ScheduleInsert[] }>('/api/schedule/inserts'),
+  createInsert: (body: {
+    insert_type: import('./types').InsertType;
+    label?: string;
+    interval_minutes: number;
+    audio_file?: string;
+    tts_template?: string;
+    enabled?: boolean;
+  }) => request<{ ok: true; id: number }>('/api/schedule/inserts', { method: 'POST', body: JSON.stringify(body) }),
+  updateInsert: (
+    id: number,
+    body: Partial<{
+      label: string;
+      interval_minutes: number;
+      audio_file: string | null;
+      clear_audio_file: boolean;
+      tts_template: string | null;
+      clear_tts_template: boolean;
+      enabled: boolean;
+    }>,
+  ) => request<{ ok: true }>(`/api/schedule/inserts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteInsert: (id: number) => request<{ ok: true }>(`/api/schedule/inserts/${id}`, { method: 'DELETE' }),
+  fireInsertNow: (id: number) =>
+    request<{ ok: true; label: string; file: string }>(`/api/schedule/inserts/${id}/fire-now`, { method: 'POST' }),
 };
