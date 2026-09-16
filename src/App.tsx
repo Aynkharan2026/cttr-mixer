@@ -3,7 +3,7 @@ import AuthGate from './components/AuthGate';
 import Layout from './components/Layout';
 import { FacetsProvider } from './FacetsContext';
 import { StatusProvider } from './StatusContext';
-import NowPlaying from './pages/NowPlaying';
+import Overview from './pages/Overview';
 import Search from './pages/Search';
 import Movies from './pages/Movies';
 import MovieDetail from './pages/MovieDetail';
@@ -29,7 +29,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
-                <Route index element={<NowPlaying />} />
+                <Route index element={<Overview />} />
                 <Route path="search" element={<Search />} />
                 <Route path="movies" element={<Movies />} />
                 <Route path="movies/:id" element={<MovieDetail />} />

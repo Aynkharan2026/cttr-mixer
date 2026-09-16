@@ -1,176 +1,102 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { useState } from 'react';
-import { useStatus } from '../StatusContext';
-import { api } from '../api';
-import { clearToken } from '../api';
+import { Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import TopBar from './TopBar';
+import LeftPanel from './LeftPanel';
+import RightConsole from './RightConsole';
+import NowPlayingCard from './NowPlayingCard';
 import AudioPlayer from './AudioPlayer';
 
-const NAV = [
-  { to: '/', label: 'தற்போது ஒலிபரப்பு', end: true },
-  { to: '/search', label: 'பாடல் தேடல்' },
-  { to: '/movies', label: 'திரைப்படம்' },
-  { to: '/singers', label: 'பாடகர்' },
-  { to: '/music-directors', label: 'இசையமைப்பாளர்' },
-  { to: '/songwriters', label: 'பாடலாசிரியர்' },
-  { to: '/moods', label: 'உணர்வு' },
-  { to: '/dayparts', label: 'நேரம்' },
-  { to: '/content-types', label: 'வகை' },
-  { to: '/years', label: 'ஆண்டு' },
-  { to: '/queue', label: 'வரிசை' },
-  { to: '/schedule', label: 'நேர அட்டவணை' },
-];
+const TOP_H = 52; // px, matches TopBar's padding
+const BOTTOM_H = 60; // px, matches AudioPlayer's padding
 
-function pillClass(active: boolean) {
-  return `tamil whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition ${
-    active ? 'font-semibold' : 'text-white/60 hover:text-white/90'
-  }`;
-}
-
-function TransportControls() {
-  const { status, refresh } = useStatus();
-  const [busy, setBusy] = useState<string | null>(null);
-
-  async function run(name: string, fn: () => Promise<unknown>) {
-    setBusy(name);
-    try {
-      await fn();
-      await refresh();
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  const paused = status?.paused;
-  const live = status?.live?.enabled;
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => run('pause', () => (paused ? api.resume() : api.pause()))}
-        disabled={busy !== null}
-        title={paused ? 'தொடர் (Resume)' : 'நிறுத்து (Pause)'}
-        className="tamil rounded-lg border px-2.5 py-1.5 text-xs font-medium text-white/80 disabled:opacity-40"
-        style={{ borderColor: 'var(--card-border)' }}
-      >
-        {paused ? '▶ தொடர்' : '⏸ நிறுத்து'}
-      </button>
-      <button
-        onClick={() => run('skip', () => api.skip())}
-        disabled={busy !== null}
-        title="அடுத்த பாடல் (Skip)"
-        className="tamil rounded-lg border px-2.5 py-1.5 text-xs font-medium text-white/80 disabled:opacity-40"
-        style={{ borderColor: 'var(--card-border)' }}
-      >
-        ⏭ அடுத்தது
-      </button>
-      <button
-        onClick={() => run('live', () => api.setLive(!live))}
-        disabled={busy !== null}
-        title="நேரடி ஒலிபரப்பு (Live mode)"
-        className="tamil rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-40"
-        style={{
-          background: live ? 'var(--gold)' : 'transparent',
-          color: live ? '#1a0a2e' : 'rgba(255,255,255,0.7)',
-          border: `1px solid ${live ? 'var(--gold)' : 'var(--card-border)'}`,
-        }}
-      >
-        ● நேரடி
-      </button>
-    </div>
-  );
-}
-
+/**
+ * The fixed 3-panel radio console shell: TopBar / LeftPanel (nav) / center
+ * (persistent Now Playing card + routed page) / RightConsole (schedule, queue,
+ * placeholders) / bottom mini-mixer. Desktop keeps left+right panels fixed at all
+ * times; mobile collapses the left panel to a hamburger drawer and the right
+ * console to a right-edge slide-in, with the bottom bar always pinned.
+ */
 export default function Layout() {
-  const { status } = useStatus();
-  const listeners = status?.listeners?.total ?? null;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [locked, setLocked] = useState(false);
+
+  // Close mobile overlays on viewport growth so they don't get stuck open behind
+  // the desktop fixed layout.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setMobileNavOpen(false);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const sidebarW = sidebarCollapsed ? 64 : 224;
+  const consoleW = 320;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar (md+) */}
-      <aside
-        className="hidden md:flex md:w-56 md:flex-col md:border-r md:px-3 md:py-5 md:shrink-0"
-        style={{ borderColor: 'var(--card-border)' }}
-      >
-        <div className="px-2 mb-6">
-          <div className="tamil text-base font-bold" style={{ color: 'var(--gold)' }}>
-            CTTR மிக்சர்
-          </div>
-          <div className="text-[11px] text-white/40 mt-0.5">Canada Trenton Tamil Radio</div>
+    <div className="min-h-screen" data-cttr-layout="three-panel-console-v1" style={{ paddingTop: TOP_H, paddingBottom: BOTTOM_H }}>
+      <TopBar
+        onToggleMobileNav={() => setMobileNavOpen((v) => !v)}
+        onToggleConsole={() => setConsoleOpen((v) => !v)}
+        onToggleSidebarCollapse={() => setSidebarCollapsed((v) => !v)}
+        sidebarCollapsed={sidebarCollapsed}
+      />
+
+      <LeftPanel collapsed={sidebarCollapsed} mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
+
+      {/* Center panel */}
+      <main className="cttr-main min-h-[calc(100vh-112px)] px-3 py-4 md:px-6 md:py-6 transition-all duration-200">
+        <div className="mx-auto transition-all duration-200" style={{ maxWidth: 720 }}>
+          <NowPlayingCard />
+          <Outlet />
         </div>
-        <nav className="flex flex-col gap-0.5">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `tamil rounded-lg px-3 py-2 text-sm transition ${
-                  isActive ? 'font-semibold' : 'text-white/60 hover:text-white/90 hover:bg-white/5'
-                }`
-              }
-              style={({ isActive }) => (isActive ? { background: 'rgba(212,175,55,0.12)', color: 'var(--gold)' } : {})}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <button
-          onClick={() => {
-            clearToken();
-            window.location.reload();
-          }}
-          className="tamil mt-auto rounded-lg px-3 py-2 text-left text-xs text-white/30 hover:text-white/60"
-        >
-          குறியீட்டை மறு-உள்ளிடு
-        </button>
+      </main>
+
+      {/* Desktop left margin spacer + right console column reserve, via media-query-driven wrapper */}
+      <style>{`
+        @media (min-width: 768px) {
+          .cttr-main { margin-left: ${sidebarW}px; }
+        }
+        @media (min-width: 1024px) {
+          .cttr-main { margin-right: ${consoleW}px; }
+        }
+      `}</style>
+
+      {/* Right console: fixed column on lg+, slide-in drawer below that */}
+      <aside
+        className="hidden lg:flex lg:flex-col fixed right-0 top-[52px] bottom-[60px] z-20 border-l"
+        style={{ width: consoleW, borderColor: 'var(--card-border)', background: 'rgba(13,5,24,0.85)' }}
+      >
+        <RightConsole />
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header
-          className="sticky top-0 z-20 border-b px-3 py-2.5 backdrop-blur-md"
-          style={{ borderColor: 'var(--card-border)', background: 'rgba(13,5,24,0.85)' }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="md:hidden tamil text-sm font-bold" style={{ color: 'var(--gold)' }}>
-              CTTR
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-white/50">
-              <span
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ background: status?.liquidsoap_online ? '#4ade80' : '#f87171' }}
-              />
-              <span className="tamil">கேட்போர்</span>
-              <span className="font-semibold text-white/80">{listeners ?? '—'}</span>
-            </div>
-            <TransportControls />
-          </div>
-        </header>
-
-        {/* Mobile nav strip */}
-        <nav
-          className="md:hidden flex gap-1 overflow-x-auto border-b px-3 py-2"
-          style={{ borderColor: 'var(--card-border)' }}
-        >
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => pillClass(isActive)}
-              style={({ isActive }) => (isActive ? { background: 'rgba(212,175,55,0.14)', color: 'var(--gold)' } : {})}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <main className="flex-1 px-3 py-4 md:px-6 md:py-6 max-w-4xl w-full mx-auto md:mx-0">
-          <Outlet />
-        </main>
-
-        <AudioPlayer />
+      <div
+        className={`lg:hidden fixed inset-y-0 right-0 z-30 border-l transition-transform duration-200 ${
+          consoleOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ width: 'min(88vw, 360px)', borderColor: 'var(--card-border)', background: 'var(--bg-mid)', paddingTop: TOP_H, paddingBottom: BOTTOM_H }}
+      >
+        <RightConsole />
       </div>
+      {consoleOpen && <div className="lg:hidden fixed inset-0 z-20 bg-black/60" onClick={() => setConsoleOpen(false)} />}
+
+      <AudioPlayer locked={locked} onToggleLock={() => setLocked((v) => !v)} />
+
+      {/* Layout lock: absorbs taps everywhere except the bottom bar (z-40, above this) */}
+      {locked && (
+        <div
+          className="fixed z-[35] flex items-start justify-center pt-24"
+          style={{ top: TOP_H, bottom: BOTTOM_H, left: 0, right: 0, background: 'rgba(13,5,24,0.55)' }}
+        >
+          <div
+            className="tamil rounded-xl border px-4 py-2.5 text-xs text-white/70"
+            style={{ borderColor: 'var(--gold)', background: 'rgba(13,5,24,0.9)' }}
+          >
+            🔒 பூட்டப்பட்டுள்ளது — திறக்க கீழே உள்ள பூட்டு பொத்தானை அழுத்தவும்
+          </div>
+        </div>
+      )}
     </div>
   );
 }

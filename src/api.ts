@@ -113,5 +113,47 @@ export const api = {
   setLive: (enabled: boolean) =>
     request<{ ok: boolean }>('/api/live', { method: 'POST', body: JSON.stringify({ enabled }) }),
 
-  history: (limit = 25) => request<{ history: unknown[] }>(`/api/history${qs({ limit })}`),
+  history: (limit = 25) => request<{ history: import('./types').PlayLogEntry[] }>(`/api/history${qs({ limit })}`),
+
+  // Schedule editor: real CRUD against the playlists / playlist_tracks tables that
+  // the broadcast engine (pick_next in control_api.py) already reads.
+  playlists: (params: { channel?: string } = {}) =>
+    request<{ results: import('./types').Playlist[] }>(`/api/schedule/playlists${qs(params)}`),
+  createPlaylist: (body: {
+    name: string;
+    daypart: string;
+    channel?: string;
+    description?: string;
+    scheduled_at?: string | null;
+    slot_type?: string | null;
+  }) => request<{ ok: true; id: number }>('/api/schedule/playlists', { method: 'POST', body: JSON.stringify(body) }),
+  updatePlaylist: (
+    id: number,
+    body: Partial<{
+      name: string;
+      description: string;
+      daypart: string;
+      scheduled_at: string | null;
+      clear_scheduled_at: boolean;
+      slot_type: string | null;
+    }>,
+  ) => request<{ ok: true }>(`/api/schedule/playlists/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deletePlaylist: (id: number) => request<{ ok: true }>(`/api/schedule/playlists/${id}`, { method: 'DELETE' }),
+
+  playlistTracks: (id: number) =>
+    request<{ results: import('./types').PlaylistTrack[] }>(`/api/schedule/playlists/${id}/tracks`),
+  addPlaylistTrack: (id: number, trackId: string, position?: number) =>
+    request<{ ok: true; position: number; track_count: number }>(`/api/schedule/playlists/${id}/tracks`, {
+      method: 'POST',
+      body: JSON.stringify({ track_id: trackId, position }),
+    }),
+  reorderPlaylistTracks: (id: number, trackIds: string[]) =>
+    request<{ ok: true; track_count: number }>(`/api/schedule/playlists/${id}/tracks/order`, {
+      method: 'PUT',
+      body: JSON.stringify({ track_ids: trackIds }),
+    }),
+  removePlaylistTrack: (id: number, trackId: string) =>
+    request<{ ok: true; track_count: number }>(`/api/schedule/playlists/${id}/tracks/${trackId}`, {
+      method: 'DELETE',
+    }),
 };
