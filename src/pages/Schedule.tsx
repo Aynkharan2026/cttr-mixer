@@ -6,6 +6,7 @@ import HourTimeline from '../components/schedule/HourTimeline';
 import CalendarGrid from '../components/schedule/CalendarGrid';
 import InsertsPanel from '../components/schedule/InsertsPanel';
 import SlotEditorModal from '../components/schedule/SlotEditorModal';
+import CalendarCellModal from '../components/schedule/CalendarCellModal';
 
 function sundayOfWeek(d: Date): Date {
   const copy = new Date(d);
@@ -34,6 +35,7 @@ export default function Schedule() {
   const [weekStart, setWeekStart] = useState(() => sundayOfWeek(new Date()));
   const [overrideMode, setOverrideMode] = useState(false);
   const [editing, setEditing] = useState<{ slot: ClockSlot | null; minuteOffset: number } | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<CalendarEntry | null>(null);
   const [newClockName, setNewClockName] = useState('');
   const [applyWeekHourStart, setApplyWeekHourStart] = useState(0);
   const [applyWeekHourEnd, setApplyWeekHourEnd] = useState(1);
@@ -126,9 +128,8 @@ export default function Schedule() {
     await loadCalendar();
   }
 
-  async function onCalendarClear(entry: CalendarEntry) {
-    if (!confirm(`"${entry.clock_name_tamil || entry.clock_name}" ஒதுக்கீட்டை நீக்கவா?`)) return;
-    await api.deleteCalendarEntry(entry.id);
+  async function onCalendarEntryDeleted() {
+    setViewingEntry(null);
     await loadCalendar();
   }
 
@@ -292,7 +293,7 @@ export default function Schedule() {
               overrideMode={overrideMode}
               onWeekChange={(delta) => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + delta); return n; })}
               onAssign={onCalendarAssign}
-              onClear={onCalendarClear}
+              onCellClick={setViewingEntry}
             />
           </div>
 
@@ -314,6 +315,14 @@ export default function Schedule() {
             setEditing(null);
             refreshClockDetail();
           }}
+        />
+      )}
+
+      {viewingEntry && (
+        <CalendarCellModal
+          entry={viewingEntry}
+          onClose={() => setViewingEntry(null)}
+          onDeleted={onCalendarEntryDeleted}
         />
       )}
     </div>

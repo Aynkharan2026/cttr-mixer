@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import ScheduleEditor from './ScheduleEditor';
 import QueuePanel from './QueuePanel';
+import { playSfx, type SfxKind } from '../lib/sfx';
 
 interface SectionProps {
   title: string;
@@ -25,20 +26,37 @@ function Section({ title, defaultOpen, children }: SectionProps) {
   );
 }
 
-function PlaceholderGrid({
+/** Locally-synthesized RJ cue buttons (Web Audio API — see lib/sfx.ts). Plays only
+ * in this browser tab for the RJ's own timing reference; never touches Liquidsoap
+ * or the live broadcast (no jingle/SFX audio library exists on the box to draw
+ * real clips from, and there's no ad-hoc live-injection mechanism to push into —
+ * see the build report). A brief flash on click is the only feedback needed since
+ * playback is immediate and local. */
+function SfxGrid({
   items,
 }: {
-  items: { label: string; icon: string }[];
+  items: { label: string; icon: string; kind: SfxKind }[];
 }) {
+  const [active, setActive] = useState<SfxKind | null>(null);
+
+  function trigger(kind: SfxKind) {
+    playSfx(kind);
+    setActive(kind);
+    setTimeout(() => setActive((v) => (v === kind ? null : v)), 250);
+  }
+
   return (
     <div className="grid grid-cols-3 gap-2">
       {items.map((item) => (
         <button
           key={item.label}
-          disabled
-          title="இணைக்கப்படவில்லை — ஒலி நூலகம் சேவையகத்தில் இல்லை (not wired: no audio library on the server yet)"
-          className="tamil flex flex-col items-center gap-1 rounded-lg border py-2.5 text-[11px] text-white/30 cursor-not-allowed opacity-50"
-          style={{ borderColor: 'var(--card-border)' }}
+          onClick={() => trigger(item.kind)}
+          title="உலாவியில் மட்டும் இயங்கும் — நேரடி ஒலிபரப்பில் சேர்க்கப்படாது (RJ cue only, local to this browser; not broadcast)"
+          className="tamil flex flex-col items-center gap-1 rounded-lg border py-2.5 text-[11px] text-white/70 transition-colors hover:text-white/95"
+          style={{
+            borderColor: active === item.kind ? 'var(--gold)' : 'var(--card-border)',
+            background: active === item.kind ? 'rgba(212,175,55,0.15)' : 'transparent',
+          }}
         >
           <span className="text-base" aria-hidden>
             {item.icon}
@@ -52,12 +70,14 @@ function PlaceholderGrid({
 
 /**
  * Fixed right console. Schedule Editor and Queue are real (wired to control_api.py).
- * Quick-insert and special-effects buttons are disabled placeholders: the catalog
- * has no curated jingle/station-ID/time-announcement/SFX audio, and there is no
- * telnet command in cttr.liq to inject an ad-hoc clip outside the normal picker —
- * building "working" buttons here would mean either faking playback or queuing a
- * random Tamil song mislabeled as a jingle, which we're not doing. See the build
- * report for what it would take to make these real.
+ * Sound Effects buttons synthesize their cue locally via Web Audio (lib/sfx.ts) —
+ * the catalog has no curated applause/horn/bell/transition clips, so this is an
+ * honest RJ-only timing cue rather than a broadcast injection (no mechanism exists
+ * to push ad-hoc audio into the live mix outside the normal catalog/insert picker,
+ * and building one is out of scope — see the build report). "Live Mic" below stays
+ * a disabled placeholder for the same reason true browser-mic capture would need:
+ * see the persistent 🎙️ நேரடி மைக் button in TopBar for the real (non-mic-capture)
+ * live-priority mechanism that does exist.
  */
 export default function RightConsole() {
   return (
@@ -91,16 +111,18 @@ export default function RightConsole() {
       </Section>
 
       <Section title="ஒலி விளைவுகள் — Sound Effects">
-        <PlaceholderGrid
+        <SfxGrid
           items={[
-            { label: 'கைதட்டல்', icon: '👏' },
-            { label: 'கொம்பு', icon: '📯' },
-            { label: 'மணி', icon: '🔔' },
-            { label: 'இடைநிலை', icon: '🔀' },
+            { label: 'கைதட்டல்', icon: '👏', kind: 'applause' },
+            { label: 'கொம்பு', icon: '📯', kind: 'horn' },
+            { label: 'மணி', icon: '🔔', kind: 'bell' },
+            { label: 'இடைநிலை', icon: '🔀', kind: 'transition' },
           ]}
         />
         <div className="text-[10px] text-white/30 mt-2 leading-relaxed">
-          இணைக்கப்படவில்லை: ஒலி விளைவு நூலகம் இன்னும் கட்டப்படவில்லை.
+          இந்த உலாவியில் மட்டும் ஒலிக்கும் (RJ-க்கான நேர குறிப்பு) — நேரடி ஒலிபரப்பில்
+          சேர்க்கப்படாது. இந்த வகை ஒலி விளைவு கோப்புகள் சேவையகத்தில் இல்லை, எனவே Web Audio
+          மூலம் இங்கேயே உருவாக்கப்படுகிறது.
         </div>
       </Section>
 
@@ -117,8 +139,10 @@ export default function RightConsole() {
           நேரடி மைக்
         </button>
         <div className="text-[10px] text-white/30 mt-2 leading-relaxed">
-          இது "நேரடி ஒலிபரப்பு" (relay) பொத்தானிலிருந்து வேறுபட்டது — உண்மையான மைக் உள்ளீட்டுக்கு
-          Liquidsoap-இல் ஹார்ட்வேர் ஆடியோ இன்புட் அமைவு தேவை.
+          இந்த உலாவி உங்கள் மைக்கை நேரடி ஒலிபரப்பில் சேர்க்காது — அதற்கு Liquidsoap-இல்
+          ஹார்ட்வேர் ஆடியோ இன்புட் அமைவு தேவை (இன்னும் இல்லை). மேலே உள்ள TopBar-இல் உள்ள
+          🎙️ நேரடி மைக் பொத்தான் உண்மையில் என்ன செய்கிறது என்பதைப் பார்க்கவும் — வெளிப்புற
+          DJ மூலத்திற்கு முன்னுரிமை அளிக்கும் ஒரு switch (cttr.live), மைக் capture அல்ல.
         </div>
       </Section>
 

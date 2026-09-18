@@ -9,7 +9,7 @@ interface Props {
   overrideMode: boolean;
   onWeekChange: (delta: number) => void;
   onAssign: (dayIndex: number, hour: number, dateIso: string) => void;
-  onClear: (entry: CalendarEntry) => void;
+  onCellClick: (entry: CalendarEntry) => void;
 }
 
 function dateStr(d: Date): string {
@@ -31,7 +31,7 @@ function clockColor(clockId: number): string {
  * reads as distinct from the recurring pattern it's overriding, per the spec.
  */
 export default function CalendarGrid({
-  weekStart, entries, selectedClockId, overrideMode, onWeekChange, onAssign, onClear,
+  weekStart, entries, selectedClockId, overrideMode, onWeekChange, onAssign, onCellClick,
 }: Props) {
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => {
@@ -90,8 +90,8 @@ export default function CalendarGrid({
       <div className="text-[10px] text-white/35 mb-2 tamil">
         {selectedClockId
           ? overrideMode
-            ? '📌 தேர்ந்தெடுக்கப்பட்ட கடிகாரத்தை ஒரு குறிப்பிட்ட தேதியில் மட்டும் ஒதுக்க கட்டத்தைச் சொடுக்கவும் (மேலெழுதுதல்).'
-            : 'தேர்ந்தெடுக்கப்பட்ட கடிகாரத்தை தொடர்ச்சியான வாராந்திர நேரமாக ஒதுக்க கட்டத்தைச் சொடுக்கவும்.'
+            ? '📌 காலியான கட்டத்தைச் சொடுக்கி தேர்ந்தெடுக்கப்பட்ட கடிகாரத்தை ஒரு குறிப்பிட்ட தேதியில் மட்டும் ஒதுக்கவும் (மேலெழுதுதல்). ஏற்கனவே நிரப்பப்பட்ட கட்டத்தைச் சொடுக்கினால் விவரங்கள் திறக்கும் — நீக்க அங்கே ஒரு பொத்தான் உள்ளது.'
+            : 'காலியான கட்டத்தைச் சொடுக்கி தேர்ந்தெடுக்கப்பட்ட கடிகாரத்தை தொடர்ச்சியான வாராந்திர நேரமாக ஒதுக்கவும். ஏற்கனவே நிரப்பப்பட்ட கட்டத்தைச் சொடுக்கினால் விவரங்கள் திறக்கும் — நீக்க அங்கே ஒரு பொத்தான் உள்ளது.'
           : 'கட்டத்தை ஒதுக்க முதலில் ஒரு கடிகாரத்தைத் தேர்ந்தெடுக்கவும் (கீழே பட்டியலில் இருந்து).'}
       </div>
 
@@ -122,7 +122,7 @@ export default function CalendarGrid({
                 return (
                   <button
                     key={dayIndex}
-                    onClick={() => (cell ? onClear(cell.entry) : onAssign(dayIndex, hour, dateStr(d)))}
+                    onClick={() => (cell ? onCellClick(cell.entry) : onAssign(dayIndex, hour, dateStr(d)))}
                     className="border-t border-l h-7 text-[9px] tamil truncate px-1 text-left transition-colors"
                     style={{
                       borderColor: 'var(--card-border)',
@@ -132,7 +132,7 @@ export default function CalendarGrid({
                     }}
                     title={
                       cell
-                        ? `${cell.entry.clock_name_tamil || cell.entry.clock_name}${cell.isOverride ? ' (இந்த தேதிக்கு மட்டும்)' : ' (தொடர்ச்சி)'} — சொடுக்கி நீக்கவும்`
+                        ? `${cell.entry.clock_name_tamil || cell.entry.clock_name}${cell.isOverride ? ' (இந்த தேதிக்கு மட்டும்)' : ' (தொடர்ச்சி)'} — சொடுக்கி விவரங்களைப் பார்க்கவும்`
                         : 'காலியாக உள்ளது — சொடுக்கி ஒதுக்கவும்'
                     }
                   >

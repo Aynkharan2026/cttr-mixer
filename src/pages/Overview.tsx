@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStatus } from '../StatusContext';
 import { api } from '../api';
 import type { PlayLogEntry } from '../types';
+import TodayTimeline from '../components/schedule/TodayTimeline';
 
 function formatDuration(sec: number | null): string {
   if (!sec) return '';
@@ -60,6 +61,51 @@ export default function Overview() {
           <div className="text-sm font-medium mt-1.5" style={{ color: status?.liquidsoap_online ? '#4ade80' : '#f87171' }}>
             {status?.liquidsoap_online ? 'ஆன்-எயர்' : 'ஆஃப்லைன்'}
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <h2 className="tamil text-sm font-bold mb-2.5" style={{ color: 'var(--gold)' }}>
+            அடுத்து வரும் பாடல்கள் — Up Next
+          </h2>
+          {!status?.queue || status.queue.length === 0 ? (
+            <div className="text-white/40 text-xs rounded-lg border px-3 py-3" style={{ borderColor: 'var(--card-border)' }}>
+              வரிசை காலியாக உள்ளது — daypart விதி இயந்திரம் அடுத்த பாடலைத் தேர்ந்தெடுக்கும்.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {status.queue.slice(0, 5).map((t, i) => (
+                <div
+                  key={`${t.id}-${i}`}
+                  className="flex items-center gap-2.5 rounded-lg border px-2.5 py-2"
+                  style={{ borderColor: 'var(--card-border)', background: 'rgba(255,255,255,0.02)' }}
+                >
+                  <div
+                    className="tamil flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
+                    style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)' }}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="tamil truncate text-xs font-medium text-white/90">
+                      {t.title_tamil || t.title || 'Untitled'}
+                    </div>
+                    <div className="truncate text-[10px] text-white/45">
+                      {[t.artist, t.movie_name].filter(Boolean).join(' · ')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="tamil text-sm font-bold mb-2.5" style={{ color: 'var(--gold)' }}>
+            இன்றைய அட்டவணை — Today's Schedule
+          </h2>
+          <TodayTimeline />
         </div>
       </div>
 
