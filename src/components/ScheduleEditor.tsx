@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, ApiError } from '../api';
 import { useFacets } from '../FacetsContext';
 import { SLOT_TYPES, slotTypeLabel } from '../slotTypes';
+import { bilingualTitle } from '../lib/titles';
 import type { Playlist, PlaylistTrack, Track } from '../types';
 
 /**
@@ -398,7 +399,7 @@ export function PlaylistTracksEditor({
                   onClick={() => addTrack(t)}
                   className="tamil block w-full truncate px-2.5 py-1.5 text-left text-[11px] text-white/80 hover:bg-white/5"
                 >
-                  {t.title_tamil || t.title || t.filename} — <span className="text-white/40">{t.artist}</span>
+                  {bilingualTitle(t.title_tamil, t.title, t.filename)} — <span className="text-white/40">{t.artist}</span>
                 </button>
               ))
             )}
@@ -433,7 +434,7 @@ export function PlaylistTracksEditor({
               <span className="text-white/25 text-xs shrink-0" aria-hidden>
                 ⠿
               </span>
-              <span className="tamil truncate flex-1 text-xs text-white/85">{t.title_tamil || t.title}</span>
+              <span className="tamil truncate flex-1 text-xs text-white/85">{bilingualTitle(t.title_tamil, t.title)}</span>
               <button onClick={() => removeTrack(t.id)} className="text-red-300/70 hover:text-red-300 text-xs shrink-0" title="நீக்கு">
                 ✕
               </button>

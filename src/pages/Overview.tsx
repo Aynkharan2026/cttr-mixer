@@ -3,6 +3,7 @@ import { useStatus } from '../StatusContext';
 import { api } from '../api';
 import type { PlayLogEntry, UpcomingTrack } from '../types';
 import TodayTimeline from '../components/schedule/TodayTimeline';
+import { bilingualTitle } from '../lib/titles';
 
 function formatDuration(sec: number | null): string {
   if (!sec) return '';
@@ -110,7 +111,7 @@ export default function Overview() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="tamil truncate text-xs font-medium text-white/90">
-                      {t.title_tamil || t.title || 'Untitled'}
+                      {bilingualTitle(t.title_tamil, t.title)}
                     </div>
                     <div className="truncate text-[10px] text-white/45">
                       {[t.artist, t.movie_name].filter(Boolean).join(' · ')}
@@ -148,7 +149,7 @@ export default function Overview() {
             >
               <span className="text-[11px] text-white/35 tabular-nums shrink-0 w-12">{formatTime(h.picked_at)}</span>
               <div className="min-w-0 flex-1">
-                <div className="tamil truncate text-xs font-medium text-white/85">{h.title_tamil || h.title || 'Untitled'}</div>
+                <div className="tamil truncate text-xs font-medium text-white/85">{bilingualTitle(h.title_tamil, h.title)}</div>
                 <div className="truncate text-[10px] text-white/40">
                   {[h.artist, h.movie_name].filter(Boolean).join(' · ')}
                   {h.duration_sec ? ` · ${formatDuration(h.duration_sec)}` : ''}

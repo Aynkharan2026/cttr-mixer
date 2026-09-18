@@ -141,6 +141,7 @@ export interface BroadcastLogEntry {
   playlist_id?: number | null;
   track_id?: string | null;
   title?: string | null;
+  title_tamil?: string | null;
   artist?: string | null;
   movie_name?: string | null;
   // station_events fields

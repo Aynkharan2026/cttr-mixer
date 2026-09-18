@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, ApiError } from '../api';
 import { useMoodLabel } from '../FacetsContext';
+import { bilingualTitle } from '../lib/titles';
 import type { Track } from '../types';
 
 function formatDuration(sec: number | null): string {
@@ -51,7 +52,7 @@ export default function TrackRow({ track, onArchived }: { track: Track; onArchiv
   const [archiving, setArchiving] = useState(false);
   const [archived, setArchived] = useState(false);
 
-  const displayTitle = track.title_tamil || track.title || track.filename || 'Untitled';
+  const displayTitle = bilingualTitle(track.title_tamil, track.title, track.filename);
 
   function showNote(aheadCount: number, whenNextLabel: string) {
     setNote(

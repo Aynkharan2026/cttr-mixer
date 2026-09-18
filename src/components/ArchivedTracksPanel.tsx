@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api';
+import { bilingualTitle } from '../lib/titles';
 import type { ArchivedTrack } from '../types';
 
 /** Minimal archived-tracks view + restore — item 4's "at least a minimal way to
@@ -43,7 +44,7 @@ export default function ArchivedTracksPanel() {
           className="flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px]"
           style={{ borderColor: 'var(--card-border)' }}
         >
-          <span className="tamil truncate flex-1 text-white/70">{t.title_tamil || t.title || t.filename}</span>
+          <span className="tamil truncate flex-1 text-white/70">{bilingualTitle(t.title_tamil, t.title, t.filename)}</span>
           <button
             onClick={() => restore(t.id)}
             disabled={restoring === t.id}

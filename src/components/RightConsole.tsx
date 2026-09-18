@@ -1,12 +1,14 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import ScheduleEditor from './ScheduleEditor';
 import QueuePanel from './QueuePanel';
 import IzicastSetupPanel from './IzicastSetupPanel';
 import ArchivedTracksPanel from './ArchivedTracksPanel';
+import { TYPE_LABELS } from './schedule/InsertsPanel';
 import { useStatus } from '../StatusContext';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { playSfx, type SfxKind } from '../lib/sfx';
+import type { InsertType, ScheduleInsert } from '../types';
 
 interface SectionProps {
   title: string;
@@ -106,12 +108,8 @@ export default function RightConsole() {
         <ScheduleEditor compact />
       </Section>
 
-      <Section title="விரைவு செருகல் — Quick Insert">
-        <div className="text-[10px] text-white/40 leading-relaxed tamil">
-          ஜிங்கிள் / நிலைய அடையாளம் / நேர அறிவிப்பு விதிகளை உருவாக்கி இயக்க, மேலே உள்ள
-          "மணி நேர கடிகாரம் &amp; காலண்டர்" பக்கத்தில் "தானியங்கி செருகல்கள் — Auto-Insert" பகுதியைப்
-          பயன்படுத்தவும் (இப்போது real: schedule_inserts + telnet cttr.push வழியே).
-        </div>
+      <Section title="விரைவு செருகல் — Quick Insert" defaultOpen>
+        <QuickInsertGrid />
       </Section>
 
       <Section title="ஒலி விளைவுகள் — Sound Effects">
@@ -150,6 +148,107 @@ export default function RightConsole() {
       <Section title="காப்பகம் — Archived Tracks">
         <ArchivedTracksPanel />
       </Section>
+    </div>
+  );
+}
+
+/**
+ * One-tap fire buttons for the configured jingle/station-ID/time-announcement
+ * schedule_inserts rows, right on the home page — previously the RJ had to
+ * navigate to /schedule -> "தானியங்கி செருகல்கள் — Auto-Insert" and find the
+ * right row's own "▶ இப்போது இயக்கு" button just to fire a station ID between
+ * songs. One button per insert_type, wired straight to the same
+ * POST /api/schedule/inserts/{id}/fire-now (api.fireInsertNow) InsertsPanel's
+ * per-row button already uses — this doesn't duplicate the fire mechanism,
+ * just surfaces the first configured rule of each type here for speed.
+ *
+ * /schedule's Auto-Insert panel is kept as-is and still the only place to
+ * create/delete a rule, change its interval, or enable/disable its recurring
+ * auto-fire — this grid is purely the quick-fire action for whatever's
+ * already configured, not a replacement for that management UI.
+ */
+function QuickInsertGrid() {
+  const [inserts, setInserts] = useState<ScheduleInsert[] | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .inserts()
+      .then((r) => {
+        if (!cancelled) setInserts(r.results);
+      })
+      .catch(() => {
+        if (!cancelled) setInserts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function fire(insert: ScheduleInsert) {
+    setBusy(insert.id);
+    setResult(null);
+    try {
+      const res = await api.fireInsertNow(insert.id);
+      setResult(`✓ ${res.label}`);
+    } catch (err) {
+      setResult(`✗ ${err instanceof ApiError ? err.message : 'தோல்வி'}`);
+    } finally {
+      setBusy(null);
+      setTimeout(() => setResult(null), 4000);
+    }
+  }
+
+  if (inserts === null) {
+    return <div className="text-[10px] text-white/30 tamil">ஏற்றுகிறது…</div>;
+  }
+
+  if (inserts.length === 0) {
+    return (
+      <div className="text-[10px] text-white/40 leading-relaxed tamil">
+        இன்னும் விதிகள் இல்லை — "மணி நேர கடிகாரம் &amp; காலண்டர்" பக்கத்தில் "தானியங்கி
+        செருகல்கள்" பகுதியில் உருவாக்கவும்.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        {(Object.keys(TYPE_LABELS) as InsertType[]).map((t) => {
+          const insert = inserts.find((i) => i.insert_type === t);
+          const meta = TYPE_LABELS[t];
+          const isBusy = insert != null && busy === insert.id;
+          return (
+            <button
+              key={t}
+              onClick={() => insert && fire(insert)}
+              disabled={!insert || busy !== null}
+              title={
+                insert
+                  ? `${insert.label || meta.label} — இப்போதே இயக்கு (enabled ஐ மாற்றாது)`
+                  : 'இந்த வகைக்கு விதி கட்டமைக்கப்படவில்லை — /schedule பக்கத்தில் சேர்க்கவும்'
+              }
+              className="tamil flex flex-col items-center gap-1 rounded-lg border py-2.5 text-[11px] transition-colors disabled:opacity-30"
+              style={{
+                borderColor: 'var(--card-border)',
+                color: insert ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.3)',
+              }}
+            >
+              <span className="text-base" aria-hidden>
+                {isBusy ? '···' : meta.icon}
+              </span>
+              {meta.label}
+            </button>
+          );
+        })}
+      </div>
+      {result && <div className="text-[11px] text-white/60 tamil break-words">{result}</div>}
+      <Link to="/schedule" className="tamil text-[10px] text-white/30 hover:text-white/55">
+        இடைவெளி / வரம்பு அமைப்பு → அட்டவணை பக்கம்
+      </Link>
     </div>
   );
 }

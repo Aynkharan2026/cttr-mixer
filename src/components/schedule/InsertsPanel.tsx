@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { api, ApiError } from '../../api';
 import type { InsertType, ScheduleInsert } from '../../types';
 
-const TYPE_LABELS: Record<InsertType, { label: string; icon: string }> = {
+// Exported so RightConsole's home-page quick-fire grid (QuickInsertGrid) uses
+// the exact same icons/labels as this panel rather than a second, potentially
+// drifting copy.
+export const TYPE_LABELS: Record<InsertType, { label: string; icon: string }> = {
   station_id: { label: 'நிலைய அடையாளம்', icon: '🆔' },
   time_announce: { label: 'நேர அறிவிப்பு', icon: '⏰' },
   jingle: { label: 'ஜிங்கிள்', icon: '🔔' },

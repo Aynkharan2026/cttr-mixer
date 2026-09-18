@@ -1,4 +1,5 @@
 import { useStatus } from '../StatusContext';
+import { bilingualTitle } from '../lib/titles';
 
 /**
  * Real data from /api/status's `queue` field (Liquidsoap's request queue). Reorder
@@ -35,7 +36,7 @@ export default function QueuePanel({ compact = false }: { compact?: boolean }) {
                 {i + 1}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="tamil truncate text-xs font-medium text-white/90">{t.title_tamil || t.title || 'Untitled'}</div>
+                <div className="tamil truncate text-xs font-medium text-white/90">{bilingualTitle(t.title_tamil, t.title)}</div>
                 <div className="truncate text-[10px] text-white/45">{[t.artist, t.movie_name].filter(Boolean).join(' · ')}</div>
               </div>
             </div>

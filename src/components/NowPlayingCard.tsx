@@ -1,5 +1,6 @@
 import { useStatus } from '../StatusContext';
 import { useMoodLabel } from '../FacetsContext';
+import { bilingualTitle } from '../lib/titles';
 
 function formatElapsed(sec: number | null): string {
   if (sec === null) return '';
@@ -19,7 +20,14 @@ export default function NowPlayingCard() {
   const moodLabel = useMoodLabel();
 
   const details = status?.now_playing?.details;
-  const title = details?.title_tamil || details?.title || status?.now_playing?.title || 'ஒலிபரப்பு இல்லை';
+  // Catalog tracks (details resolved): genuine bilingual pair. Ad-hoc audio
+  // (station ID/jingle/time announcement — no tracks.id, so details is null)
+  // only ever has the single raw title Liquidsoap echoes back; there is no
+  // second language field to pair it with, so it renders as-is rather than
+  // forcing a fabricated "/" split.
+  const title = details
+    ? bilingualTitle(details.title_tamil, details.title, status?.now_playing?.title)
+    : status?.now_playing?.title || 'ஒலிபரப்பு இல்லை';
   const paused = status?.paused;
   const live = status?.live;
   const isLive = live?.enabled && live?.connected;

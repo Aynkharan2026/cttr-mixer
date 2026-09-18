@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api';
+import { bilingualTitle } from '../lib/titles';
 import type { BroadcastLogEntry } from '../types';
 
 function todayIso(): string {
@@ -120,7 +121,7 @@ export default function BroadcastLog() {
                 <div className="min-w-0 flex-1">
                   {e.type === 'played' ? (
                     <>
-                      <div className="tamil truncate text-xs font-medium text-white/85">{e.title || 'Untitled'}</div>
+                      <div className="tamil truncate text-xs font-medium text-white/85">{bilingualTitle(e.title_tamil, e.title)}</div>
                       <div className="truncate text-[10px] text-white/40">
                         {[e.artist, e.movie_name].filter(Boolean).join(' · ')}
                       </div>
