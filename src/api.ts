@@ -260,6 +260,7 @@ export const api = {
     }),
 
   scheduleStatus: () => request<import('./types').ScheduleStatus>('/api/schedule/status'),
+  upcoming: (count = 8) => request<import('./types').UpcomingResponse>(`/api/schedule/upcoming${qs({ count })}`),
 
   inserts: () => request<{ results: import('./types').ScheduleInsert[] }>('/api/schedule/inserts'),
   createInsert: (body: {

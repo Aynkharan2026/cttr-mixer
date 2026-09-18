@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStatus } from '../StatusContext';
 import { api } from '../api';
-import type { PlayLogEntry } from '../types';
+import type { PlayLogEntry, UpcomingTrack } from '../types';
 import TodayTimeline from '../components/schedule/TodayTimeline';
 
 function formatDuration(sec: number | null): string {
@@ -31,12 +31,31 @@ export default function Overview() {
   const { status } = useStatus();
   const [history, setHistory] = useState<PlayLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [upcoming, setUpcoming] = useState<UpcomingTrack[]>([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
 
   useEffect(() => {
     api
       .history(15)
       .then((res) => setHistory(res.history))
       .finally(() => setLoading(false));
+  }, []);
+
+  // Real forecast of what plays next (playlist-in-order for the active clock
+  // slot, else the daypart rule engine) — see /api/schedule/upcoming. Refreshed
+  // periodically since a track finishing (or an operator editing the active
+  // playlist) changes the forecast without any user action on this page.
+  useEffect(() => {
+    function loadUpcoming() {
+      api
+        .upcoming(6)
+        .then((res) => setUpcoming(res.results))
+        .catch(() => setUpcoming([]))
+        .finally(() => setUpcomingLoading(false));
+    }
+    loadUpcoming();
+    const iv = setInterval(loadUpcoming, 30_000);
+    return () => clearInterval(iv);
   }, []);
 
   return (
@@ -69,13 +88,15 @@ export default function Overview() {
           <h2 className="tamil text-sm font-bold mb-2.5" style={{ color: 'var(--gold)' }}>
             அடுத்து வரும் பாடல்கள் — Up Next
           </h2>
-          {!status?.queue || status.queue.length === 0 ? (
+          {upcomingLoading ? (
+            <div className="text-white/40 text-xs">ஏற்றுகிறது...</div>
+          ) : upcoming.length === 0 ? (
             <div className="text-white/40 text-xs rounded-lg border px-3 py-3" style={{ borderColor: 'var(--card-border)' }}>
-              வரிசை காலியாக உள்ளது — daypart விதி இயந்திரம் அடுத்த பாடலைத் தேர்ந்தெடுக்கும்.
+              கணிக்க முடியவில்லை — காலியான பட்டியல் / பொருந்தும் பாடல்கள் இல்லை.
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {status.queue.slice(0, 5).map((t, i) => (
+              {upcoming.map((t, i) => (
                 <div
                   key={`${t.id}-${i}`}
                   className="flex items-center gap-2.5 rounded-lg border px-2.5 py-2"
@@ -95,6 +116,7 @@ export default function Overview() {
                       {[t.artist, t.movie_name].filter(Boolean).join(' · ')}
                     </div>
                   </div>
+                  <span className="tamil shrink-0 text-[10px] text-white/30">{SOURCE_LABEL[t.source] ?? t.source}</span>
                 </div>
               ))}
             </div>

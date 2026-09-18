@@ -245,3 +245,18 @@ export interface ScheduleStatus {
   inserts: ScheduleInsert[];
   tts_available: boolean;
 }
+
+// /api/schedule/upcoming — a genuine forward preview of what pick_next() will
+// actually hand Liquidsoap next (playlist-in-order for the active clock slot,
+// else the daypart rule engine), NOT Liquidsoap's own near-always-empty request
+// queue. Read-only: never writes to radio_play_log, so polling it is free.
+export interface UpcomingTrack extends Track {
+  source: 'schedule' | 'playlist' | 'request';
+  playlist_id: number | null;
+}
+
+export interface UpcomingResponse {
+  results: UpcomingTrack[];
+  daypart: string;
+  active_slot_label: string | null;
+}
