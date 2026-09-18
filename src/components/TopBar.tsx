@@ -36,11 +36,23 @@ function formatElapsed(ms: number): string {
  * here). Timer resets every time the gate transitions off->on, from whichever
  * side toggled it (this button, the AudioPlayer button, or the scheduler's
  * clock-driven gate), since status.live.enabled is the one shared source of truth.
+ *
+ * 2026-09: this button was already wired up correctly (previous commit bfdfbae)
+ * and DOES render in the deployed bundle — confirmed live via Playwright, it's
+ * genuinely present in the DOM and clickable. The station owner not noticing it
+ * was a real design bug, not a deploy/regression bug: at 11px text on a
+ * near-transparent grey pill, tucked between the listener count and the console
+ * toggle, it read as ambient chrome rather than "the mic button" — and on
+ * mobile it collapsed to a single unlabeled icon glyph. Rebuilt bigger, always
+ * red (a station's on-air light reads as "the live control" whether lit or not,
+ * not just when active), with a visible Tamil+English label at every viewport
+ * width instead of icon-only on mobile.
  */
 function LiveMicButton() {
   const { status, refresh } = useStatus();
   const [busy, setBusy] = useState(false);
   const active = !!status?.live?.enabled;
+  const connected = !!status?.live?.connected;
   const sinceRef = useRef<number | null>(null);
   const [, tick] = useState(0);
 
@@ -66,30 +78,36 @@ function LiveMicButton() {
   }
 
   const elapsed = active && sinceRef.current ? formatElapsed(Date.now() - sinceRef.current) : null;
+  const onAir = active && connected;
 
   return (
     <button
       onClick={toggle}
       disabled={busy}
+      data-testid="topbar-live-mic-button"
       title={
         active
           ? 'நிறுத்த சொடுக்கவும் — திட்டமிடப்பட்ட நிகழ்ச்சிக்குத் திரும்பும் (cttr.live off)'
           : 'வெளிப்புற நேரடி மூலத்திற்கு (DJ encoder/phone app) முன்னுரிமை அளிக்கும் — இது இந்த உலாவியின் மைக்கைப் பிடிக்காது; ஒரு வெளிப்புற மூலம் இணைந்திருந்தால் மட்டுமே உடனடியாக நேரடியாகும் (cttr.live on)'
       }
-      className="tamil flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shrink-0 disabled:opacity-50"
+      className="tamil flex items-center gap-2 rounded-full px-3 py-2 text-xs sm:text-sm font-bold shrink-0 disabled:opacity-50 shadow-lg transition-transform active:scale-95"
       style={{
-        background: active ? '#dc2626' : 'rgba(255,255,255,0.06)',
-        color: active ? '#fff' : 'rgba(255,255,255,0.65)',
-        border: `1px solid ${active ? '#dc2626' : 'var(--card-border)'}`,
+        background: onAir ? '#ef4444' : active ? '#b91c1c' : 'rgba(220,38,38,0.9)',
+        color: '#fff',
+        border: `1.5px solid ${onAir ? '#fca5a5' : 'rgba(255,255,255,0.4)'}`,
+        boxShadow: onAir ? '0 0 0 3px rgba(239,68,68,0.25)' : undefined,
       }}
     >
       <span
-        className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ background: active ? '#fff' : 'rgba(255,255,255,0.3)' }}
+        className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${onAir ? 'animate-pulse' : ''}`}
+        style={{ background: active ? '#fff' : 'rgba(255,255,255,0.55)' }}
+        aria-hidden
       />
-      <span className="hidden sm:inline">🎙️ நேரடி மைக்</span>
-      <span className="sm:hidden">🎙️</span>
-      {elapsed && <span className="tabular-nums">{elapsed}</span>}
+      <span className="text-base leading-none" aria-hidden>
+        🎙️
+      </span>
+      <span className="hidden min-[420px]:inline">நேரடி மைக்</span>
+      {elapsed && <span className="tabular-nums font-normal opacity-90">{elapsed}</span>}
     </button>
   );
 }

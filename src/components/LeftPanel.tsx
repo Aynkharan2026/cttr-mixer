@@ -12,6 +12,7 @@ const NAV = [
   { to: '/content-types', label: 'வகை', icon: '🏷️' },
   { to: '/years', label: 'ஆண்டு', icon: '📅' },
   { to: '/search', label: 'பாடல் தேடல்', icon: '🔍' },
+  { to: '/broadcast-log', label: 'ஒலிபரப்பு பதிவு', icon: '📋' },
 ];
 
 interface Props {

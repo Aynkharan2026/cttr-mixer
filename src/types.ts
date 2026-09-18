@@ -124,6 +124,30 @@ export interface PlaylistTrack extends Track {
   position: number;
 }
 
+export interface ArchivedTrack extends Track {
+  archived_at: string;
+}
+
+// /api/broadcast-log: a "played" row (from radio_play_log) or any station_events
+// row (event_type as `type`, e.g. live_on/live_off/skip/queue_add/play_now/
+// play_next/track_archived/track_restored). Discriminated loosely by `type`
+// since the two source rows carry genuinely different fields.
+export interface BroadcastLogEntry {
+  type: string;
+  at: string;
+  // "played" fields
+  source?: string;
+  daypart?: string | null;
+  playlist_id?: number | null;
+  track_id?: string | null;
+  title?: string | null;
+  artist?: string | null;
+  movie_name?: string | null;
+  // station_events fields
+  details?: Record<string, unknown>;
+  actor?: string | null;
+}
+
 export interface PlayLogEntry {
   picked_at: string;
   source: 'schedule' | 'playlist' | 'request';

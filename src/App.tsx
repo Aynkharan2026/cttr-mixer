@@ -20,6 +20,7 @@ import Years from './pages/Years';
 import YearDetail from './pages/YearDetail';
 import Queue from './pages/Queue';
 import Schedule from './pages/Schedule';
+import BroadcastLog from './pages/BroadcastLog';
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="years/:year" element={<YearDetail />} />
                 <Route path="queue" element={<Queue />} />
                 <Route path="schedule" element={<Schedule />} />
+                <Route path="broadcast-log" element={<BroadcastLog />} />
               </Route>
             </Routes>
           </BrowserRouter>

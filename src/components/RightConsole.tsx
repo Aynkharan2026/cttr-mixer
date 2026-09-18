@@ -2,6 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import ScheduleEditor from './ScheduleEditor';
 import QueuePanel from './QueuePanel';
+import IzicastSetupPanel from './IzicastSetupPanel';
+import ArchivedTracksPanel from './ArchivedTracksPanel';
+import { useStatus } from '../StatusContext';
+import { api } from '../api';
 import { playSfx, type SfxKind } from '../lib/sfx';
 
 interface SectionProps {
@@ -126,29 +130,63 @@ export default function RightConsole() {
         </div>
       </Section>
 
-      <Section title="நேரடி மைக் — Live Mic">
-        <button
-          disabled
-          title="இணைக்கப்படவில்லை — நேரடி மைக் உள்ளீடு Liquidsoap இல் அமைக்கப்படவில்லை (needs real audio-input plumbing into Liquidsoap; out of scope for this build)"
-          className="tamil w-full rounded-xl border-2 py-4 text-sm font-bold text-white/30 cursor-not-allowed opacity-50 flex flex-col items-center gap-1"
-          style={{ borderColor: 'var(--card-border)' }}
-        >
-          <span className="text-xl" aria-hidden>
-            🎙️
-          </span>
-          நேரடி மைக்
-        </button>
-        <div className="text-[10px] text-white/30 mt-2 leading-relaxed">
-          இந்த உலாவி உங்கள் மைக்கை நேரடி ஒலிபரப்பில் சேர்க்காது — அதற்கு Liquidsoap-இல்
-          ஹார்ட்வேர் ஆடியோ இன்புட் அமைவு தேவை (இன்னும் இல்லை). மேலே உள்ள TopBar-இல் உள்ள
-          🎙️ நேரடி மைக் பொத்தான் உண்மையில் என்ன செய்கிறது என்பதைப் பார்க்கவும் — வெளிப்புற
-          DJ மூலத்திற்கு முன்னுரிமை அளிக்கும் ஒரு switch (cttr.live), மைக் capture அல்ல.
+      <Section title="நேரடி மைக் — Live Mic" defaultOpen>
+        <LiveMicConsoleToggle />
+        <div className="text-[10px] text-white/30 mt-2 mb-3 leading-relaxed">
+          இந்த உலாவி உங்கள் மைக்கை நேரடி ஒலிபரப்பில் சேர்க்காது — இது ஒரு switch (cttr.live):
+          வெளிப்புற DJ மூலத்திற்கு (கீழே உள்ள iziCast அமைவு போன்றவை) முன்னுரிமை அளிக்கும்.
+          மேலே TopBar-இல் உள்ள 🎙️ நேரடி மைக் பொத்தானும் இதே switch-ஐத்தான் கட்டுப்படுத்துகிறது.
         </div>
+        <div className="text-[11px] font-semibold text-white/60 tamil mb-1.5">
+          iziCast அமைவு (iPhone) — Live Broadcast Setup
+        </div>
+        <IzicastSetupPanel />
       </Section>
 
       <Section title="வரிசை — Queue">
         <QueuePanel compact />
       </Section>
+
+      <Section title="காப்பகம் — Archived Tracks">
+        <ArchivedTracksPanel />
+      </Section>
     </div>
+  );
+}
+
+/** Compact live on/off toggle for the RightConsole panel — same /api/live
+ * endpoint as TopBar's LiveMicButton, just a fuller labelled variant here. */
+function LiveMicConsoleToggle() {
+  const { status, refresh } = useStatus();
+  const [busy, setBusy] = useState(false);
+  const active = !!status?.live?.enabled;
+  const connected = !!status?.live?.connected;
+
+  async function toggle() {
+    setBusy(true);
+    try {
+      await api.setLive(!active);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={busy}
+      className="tamil w-full rounded-xl border-2 py-3 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+      style={{
+        borderColor: active ? '#ef4444' : 'var(--card-border)',
+        background: active ? 'rgba(239,68,68,0.12)' : 'transparent',
+        color: active ? '#f87171' : 'rgba(255,255,255,0.7)',
+      }}
+    >
+      <span className="text-lg" aria-hidden>
+        🎙️
+      </span>
+      {active ? (connected ? 'நேரடியில் — On Air' : 'ஆயத்தம் — Armed (no source yet)') : 'நேரடி மைக் — Off'}
+    </button>
   );
 }

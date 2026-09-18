@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import type { CalendarEntry } from '../../types';
+import SegmentPlaylistPanel from './SegmentPlaylistPanel';
 
 interface Segment {
   hourStart: number;
@@ -78,7 +79,8 @@ function resolveTodaySegments(entries: CalendarEntry[], todayIso: string, dow: n
 export default function TodayTimeline() {
   const [entries, setEntries] = useState<CalendarEntry[] | null>(null);
   const [stationTime, setStationTime] = useState<string | null>(null);
-  const activeRef = useRef<HTMLDivElement | null>(null);
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,37 +124,45 @@ export default function TodayTimeline() {
   }
 
   return (
-    <div className="max-h-72 overflow-y-auto rounded-lg border" style={{ borderColor: 'var(--card-border)' }}>
+    <div className="max-h-[32rem] overflow-y-auto rounded-lg border" style={{ borderColor: 'var(--card-border)' }}>
       {segments.map((seg, i) => {
         const active = parsed.hour >= seg.hourStart && parsed.hour < seg.hourEnd;
         const dormant = seg.clockId === -1;
+        const expanded = expandedIdx === i;
         return (
-          <div
-            key={i}
-            ref={active ? activeRef : undefined}
-            className="flex items-center gap-2.5 px-3 py-2 border-t first:border-t-0"
-            style={{
-              borderColor: 'var(--card-border)',
-              background: active ? 'rgba(212,175,55,0.14)' : 'transparent',
-            }}
-          >
-            <span className="text-[10px] text-white/40 tabular-nums shrink-0 w-[74px]">
-              {pad(seg.hourStart)}:00–{pad(seg.hourEnd % 24)}:00
-            </span>
-            <span
-              className={`tamil truncate text-xs flex-1 ${dormant ? 'text-white/30 italic' : 'text-white/85'}`}
+          <div key={i} className="border-t first:border-t-0 px-2" style={{ borderColor: 'var(--card-border)' }}>
+            <button
+              ref={active ? activeRef : undefined}
+              onClick={() => !dormant && setExpandedIdx(expanded ? null : i)}
+              disabled={dormant}
+              className="flex w-full items-center gap-2.5 px-1 py-2 text-left disabled:cursor-default"
+              style={{ background: active ? 'rgba(212,175,55,0.14)' : 'transparent' }}
+              title={dormant ? undefined : 'விரிவாக்கி பாடல் பட்டியலைப் பார்க்க'}
             >
-              {dormant
-                ? 'திட்டமிடப்படாதது (daypart விதி)'
-                : `${seg.isOverride ? '📌 ' : ''}${seg.clockNameTamil || seg.clockName}`}
-            </span>
-            {active && (
-              <span
-                className="tamil shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold"
-                style={{ background: 'var(--gold)', color: '#1a0a2e' }}
-              >
-                இப்போது
+              <span className="text-[10px] text-white/40 tabular-nums shrink-0 w-[74px]">
+                {pad(seg.hourStart)}:00–{pad(seg.hourEnd % 24)}:00
               </span>
+              <span
+                className={`tamil truncate text-xs flex-1 ${dormant ? 'text-white/30 italic' : 'text-white/85'}`}
+              >
+                {dormant
+                  ? 'திட்டமிடப்படாதது (daypart விதி)'
+                  : `${seg.isOverride ? '📌 ' : ''}${seg.clockNameTamil || seg.clockName}`}
+              </span>
+              {active && (
+                <span
+                  className="tamil shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold"
+                  style={{ background: 'var(--gold)', color: '#1a0a2e' }}
+                >
+                  இப்போது
+                </span>
+              )}
+              {!dormant && <span className="text-white/25 text-[10px] shrink-0">{expanded ? '▲' : '▼'}</span>}
+            </button>
+            {expanded && !dormant && (
+              <div className="pb-2.5">
+                <SegmentPlaylistPanel clockId={seg.clockId} onClose={() => setExpandedIdx(null)} />
+              </div>
             )}
           </div>
         );

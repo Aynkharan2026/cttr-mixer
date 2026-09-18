@@ -237,7 +237,26 @@ function CreatePlaylistForm({
   );
 }
 
-function PlaylistTracksEditor({ playlist, onBack }: { playlist: Playlist; onBack: () => void }) {
+/**
+ * Real playlist-contents editor: drag-to-reorder, remove, search-and-add, and a
+ * double-confirmed "clear all" (the first half of "replace entire playlist" —
+ * the second half is just using the existing search-add flow again afterwards,
+ * since there's no bulk-add endpoint to build a separate path for). Exported so
+ * schedule/TodayTimeline.tsx's segment-expansion view can embed the exact same
+ * editor for a clock slot's playlist_id, not a re-implementation of it.
+ */
+export function PlaylistTracksEditor({
+  playlist,
+  onBack,
+  scopeNotice,
+}: {
+  playlist: Playlist;
+  onBack: () => void;
+  /** Extra copy shown above the editor — e.g. clarifying that editing here
+   * changes the persistent template for a clock slot (this + all future
+   * occurrences), not a one-off, when embedded from TodayTimeline. */
+  scopeNotice?: string;
+}) {
   const [tracks, setTracks] = useState<PlaylistTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
@@ -245,6 +264,8 @@ function PlaylistTracksEditor({ playlist, onBack }: { playlist: Playlist; onBack
   const [searching, setSearching] = useState(false);
   const dragIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [clearArmed, setClearArmed] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   function load() {
     setLoading(true);
@@ -303,6 +324,21 @@ function PlaylistTracksEditor({ playlist, onBack }: { playlist: Playlist; onBack
     commitReorder(next);
   }
 
+  async function clearAll() {
+    if (!clearArmed) {
+      setClearArmed(true);
+      return;
+    }
+    setClearing(true);
+    try {
+      await Promise.all(tracks.map((t) => api.removePlaylistTrack(playlist.id, t.id)));
+      setTracks([]);
+    } finally {
+      setClearing(false);
+      setClearArmed(false);
+    }
+  }
+
   return (
     <div>
       <button onClick={onBack} className="tamil text-xs text-white/50 hover:text-white/80 mb-2">
@@ -311,8 +347,31 @@ function PlaylistTracksEditor({ playlist, onBack }: { playlist: Playlist; onBack
       <div className="tamil text-sm font-bold mb-1" style={{ color: 'var(--gold)' }}>
         {playlist.name}
       </div>
-      <div className="text-[11px] text-white/40 mb-3">
-        இழுத்து-விடுவதன் மூலம் மறுவரிசைப்படுத்தவும் (drag to reorder)
+      {scopeNotice && (
+        <div
+          className="tamil text-[11px] rounded-lg border px-2.5 py-2 mb-2.5 leading-relaxed"
+          style={{ borderColor: 'var(--gold)', background: 'rgba(212,175,55,0.08)', color: 'rgba(255,255,255,0.8)' }}
+        >
+          {scopeNotice}
+        </div>
+      )}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[11px] text-white/40">
+          இழுத்து-விடுவதன் மூலம் மறுவரிசைப்படுத்தவும் (drag to reorder)
+        </div>
+        {tracks.length > 0 && (
+          <button
+            onClick={clearAll}
+            disabled={clearing}
+            className="tamil rounded-lg border px-2 py-1 text-[10px] shrink-0 disabled:opacity-40"
+            style={{
+              borderColor: clearArmed ? '#ef4444' : 'var(--card-border)',
+              color: clearArmed ? '#f87171' : 'rgba(255,255,255,0.4)',
+            }}
+          >
+            {clearing ? '···' : clearArmed ? 'உறுதியா? மீண்டும் — அனைத்தும் நீக்கப்படும்' : 'முழுவதும் மாற்று (காலி செய்)'}
+          </button>
+        )}
       </div>
 
       <div className="relative mb-3">

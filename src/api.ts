@@ -103,10 +103,28 @@ export const api = {
     request<{ year: number; results: import('./types').Track[] }>(`/api/years/${year}/tracks${qs(params)}`),
 
   queueTrack: (trackId: string) =>
-    request<{ ok: boolean; queued: import('./types').Track }>('/api/queue', {
+    request<{ ok: boolean; ahead_count: number; queued: import('./types').Track }>('/api/queue', {
       method: 'POST',
       body: JSON.stringify({ track_id: trackId }),
     }),
+  playNow: (trackId: string) =>
+    request<{ ok: boolean; ahead_count: number; queued: import('./types').Track }>(
+      `/api/tracks/${trackId}/play-now`,
+      { method: 'POST' },
+    ),
+  playNext: (trackId: string) =>
+    request<{ ok: boolean; ahead_count: number; queued: import('./types').Track }>(
+      `/api/tracks/${trackId}/play-next`,
+      { method: 'POST' },
+    ),
+  archiveTrack: (trackId: string) =>
+    request<{ ok: boolean }>(`/api/tracks/${trackId}/archive`, { method: 'POST' }),
+  restoreTrack: (trackId: string) =>
+    request<{ ok: boolean }>(`/api/tracks/${trackId}/restore`, { method: 'POST' }),
+  archivedTracks: (params: { limit?: number; offset?: number } = {}) =>
+    request<{ results: import('./types').ArchivedTrack[]; limit: number; offset: number }>(
+      `/api/tracks/archived${qs(params)}`,
+    ),
   skip: () => request<{ ok: boolean }>('/api/skip', { method: 'POST' }),
   pause: () => request<{ ok: boolean }>('/api/pause', { method: 'POST' }),
   resume: () => request<{ ok: boolean }>('/api/resume', { method: 'POST' }),
@@ -267,4 +285,16 @@ export const api = {
   deleteInsert: (id: number) => request<{ ok: true }>(`/api/schedule/inserts/${id}`, { method: 'DELETE' }),
   fireInsertNow: (id: number) =>
     request<{ ok: true; label: string; file: string }>(`/api/schedule/inserts/${id}/fire-now`, { method: 'POST' }),
+
+  // ஒலிபரப்பு பதிவு — Broadcast log: merges radio_play_log ("what aired") and the
+  // new station_events table ("what an RJ/scheduler did") into one timeline.
+  broadcastLog: (params: { start?: string; end?: string; limit?: number } = {}) =>
+    request<{ results: import('./types').BroadcastLogEntry[] }>(`/api/broadcast-log${qs(params)}`),
+
+  // iziCast / iPhone live-broadcast setup guide. Server/port/mount/user load with
+  // the page; the password is a separate call the RJ triggers explicitly by
+  // clicking "reveal" — never present in the page's initial load or the JS bundle.
+  liveHarborInfo: () =>
+    request<{ server: string; port: number; mount: string; user: string }>('/api/live/harbor-info'),
+  liveHarborPassword: () => request<{ password: string }>('/api/live/harbor-password'),
 };
