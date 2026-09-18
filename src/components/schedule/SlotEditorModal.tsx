@@ -229,13 +229,13 @@ export default function SlotEditorModal({ clockId, slot, defaultMinuteOffset, on
                       key={t.id}
                       onClick={() => {
                         setTrackId(t.id);
-                        setTrackLabel(t.title || t.filename || t.id);
+                        setTrackLabel(t.title_tamil || t.title || t.filename || t.id);
                         setTrackQuery('');
                         setTrackResults([]);
                       }}
                       className="tamil block w-full truncate px-2 py-1 text-left text-[11px] text-white/70 hover:bg-white/10"
                     >
-                      {t.title || t.filename} {t.artist ? `— ${t.artist}` : ''}
+                      {t.title_tamil || t.title || t.filename} {t.artist ? `— ${t.artist}` : ''}
                     </button>
                   ))}
                 </div>

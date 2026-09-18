@@ -131,6 +131,8 @@ export interface PlayLogEntry {
   playlist_id: number | null;
   track_id: string | null;
   title: string | null;
+  title_tamil: string | null;
+  filename: string | null;
   artist: string | null;
   movie_name: string | null;
   duration_sec: number | null;
