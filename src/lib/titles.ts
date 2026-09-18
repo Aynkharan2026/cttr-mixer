@@ -10,9 +10,15 @@
 // null-handling independently.
 //
 // Fallback rules (never render a bare "/" with one side empty):
-//   - both present      -> "தமிழ் / English"
-//   - only Tamil         -> "தமிழ்"
-//   - only English        -> "English"
+//   - both present, and differ  -> "தமிழ் / English"
+//   - both present, identical   -> just that one string (catalog data check:
+//                                   174 of 28,281 tracks have title_tamil set
+//                                   to an exact copy of title, not a real
+//                                   Tamil translation/transliteration -- "X / X"
+//                                   for those would look like a rendering bug,
+//                                   not a rare data quirk)
+//   - only Tamil                 -> "தமிழ்"
+//   - only English                -> "English"
 //   - neither (+ optional extra fallback, e.g. filename) -> extraFallback or "Untitled"
 export function bilingualTitle(
   titleTamil?: string | null,
@@ -21,7 +27,7 @@ export function bilingualTitle(
 ): string {
   const tamil = titleTamil?.trim();
   const english = title?.trim();
-  if (tamil && english) return `${tamil} / ${english}`;
+  if (tamil && english) return tamil === english ? tamil : `${tamil} / ${english}`;
   if (tamil) return tamil;
   if (english) return english;
   return extraFallback?.trim() || 'Untitled';
