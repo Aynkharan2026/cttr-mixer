@@ -25,12 +25,22 @@ export default function NowPlayingCard() {
   // only ever has the single raw title Liquidsoap echoes back; there is no
   // second language field to pair it with, so it renders as-is rather than
   // forcing a fabricated "/" split.
-  const title = details
-    ? bilingualTitle(details.title_tamil, details.title, status?.now_playing?.title)
-    : status?.now_playing?.title || 'ஒலிபரப்பு இல்லை';
   const paused = status?.paused;
   const live = status?.live;
   const isLive = live?.enabled && live?.connected;
+  // Liquidsoap's radio.on_metadata fires with an empty metadata dict the
+  // instant the source graph switches to the harbor input (it has no
+  // track_id/title of its own — that's real audio, not silence, just audio
+  // with no song metadata attached). Falling through to the "no broadcast"
+  // string here regardless of isLive was a false dead-air signal: the badge
+  // below already knows we're live, but the title used to contradict it by
+  // claiming nothing was on air. Show an honest "live, RJ mic" label instead
+  // of blanking to the no-broadcast string whenever we're actually live.
+  const title = isLive
+    ? 'நேரடி ஒலிபரப்பு — RJ மைக்'
+    : details
+      ? bilingualTitle(details.title_tamil, details.title, status?.now_playing?.title)
+      : status?.now_playing?.title || 'ஒலிபரப்பு இல்லை';
   const elapsed = status?.now_playing?.elapsed_sec ?? null;
   const duration = details?.duration_sec ?? null;
   const progressPct = !isLive && elapsed != null && duration ? Math.min(100, (elapsed / duration) * 100) : null;

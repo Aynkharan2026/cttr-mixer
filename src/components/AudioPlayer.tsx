@@ -13,13 +13,22 @@ const FALLBACK_SRC = 'http://77.42.6.218:8000/stream';
 function TransportControls() {
   const { status, refresh } = useStatus();
   const [busy, setBusy] = useState<string | null>(null);
+  // Same synchronous re-entrancy lock as TopBar's LiveMicButton (see its
+  // comment for why `busy` state alone isn't enough — a fast double-click
+  // can fire twice before React commits the disabled attribute). This strip
+  // has its own "● நேரடி" live toggle wired to the same /api/live, so it
+  // needs the same guard, not just the header's copy.
+  const busyRef = useRef(false);
 
   async function run(name: string, fn: () => Promise<unknown>) {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(name);
     try {
       await fn();
       await refresh();
     } finally {
+      busyRef.current = false;
       setBusy(null);
     }
   }

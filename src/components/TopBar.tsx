@@ -55,6 +55,17 @@ function LiveMicButton() {
   const connected = !!status?.live?.connected;
   const sinceRef = useRef<number | null>(null);
   const [, tick] = useState(0);
+  // Synchronous re-entrancy lock. `busy` (React state) is not enough on its
+  // own: setBusy(true) only takes effect -- and disables the button in the
+  // DOM -- on the next render/commit, which is at least one frame away. A
+  // fast double-click/double-tap can dispatch both click events before that
+  // commit happens, so both calls read the same stale `active` from the
+  // closure and both fire the same /api/live POST -- confirmed as the actual
+  // cause of the reported double-fire, not a hypothetical. A ref updates
+  // immediately, synchronously, inside the very first handler invocation, so
+  // the second (near-simultaneous) invocation sees it and bails before
+  // calling the API at all.
+  const busyRef = useRef(false);
 
   useEffect(() => {
     if (active && sinceRef.current === null) sinceRef.current = Date.now();
@@ -68,11 +79,14 @@ function LiveMicButton() {
   }, [active]);
 
   async function toggle() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     try {
       await api.setLive(!active);
       await refresh();
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
